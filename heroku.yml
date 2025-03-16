@@ -1,3 +1,11 @@
 build:
   docker:
     web: Dockerfile
+
+# Optional: Specify a release phase command if needed (e.g., for database migrations)
+release:
+  command:
+    - echo "Release phase: no actions defined"
+
+run:
+  web: uvicorn main:app --host=0.0.0.0 --port $PORT
