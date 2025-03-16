@@ -85,17 +85,17 @@ async def websocket_chat(websocket: WebSocket, room_id: str, model_id: str, user
     the connection.
     """
     # Try to extract token from headers first; if not available, fall back to query parameter.
-    token = websocket.headers.get("Authorization") or websocket.query_params.get("token")
-    if not token:
-        await websocket.close(code=1008)
-        return
-    if token.startswith("Bearer "):
-        token = token[len("Bearer "):]
-    try:
-        user_payload = verify_token(token)
-    except HTTPException:
-        await websocket.close(code=1008)
-        return
+    # token = websocket.headers.get("Authorization") or websocket.query_params.get("token")
+    # if not token:
+    #     await websocket.close(code=1008)
+    #     return
+    # if token.startswith("Bearer "):
+    #     token = token[len("Bearer "):]
+    # try:
+    #     user_payload = verify_token(token)
+    # except HTTPException:
+    #     await websocket.close(code=1008)
+    #     return
 
     # Retrieve the language (if provided)
     language = websocket.query_params.get("language")
@@ -154,17 +154,17 @@ async def websocket_audio(websocket: WebSocket, room_id: str, model_id: str, use
     The token is verified before establishing the connection.
     """
     # Extract token from headers or query parameters
-    token = websocket.headers.get("Authorization") or websocket.query_params.get("token")
-    if not token:
-        await websocket.close(code=1008)
-        return
-    if token.startswith("Bearer "):
-        token = token[len("Bearer "):]
-    try:
-        user_payload = verify_token(token)
-    except HTTPException:
-        await websocket.close(code=1008)
-        return
+    # token = websocket.headers.get("Authorization") or websocket.query_params.get("token")
+    # if not token:
+    #     await websocket.close(code=1008)
+    #     return
+    # if token.startswith("Bearer "):
+    #     token = token[len("Bearer "):]
+    # try:
+    #     user_payload = verify_token(token)
+    # except HTTPException:
+    #     await websocket.close(code=1008)
+    #     return
 
     # Retrieve the language (if provided)
     language = websocket.query_params.get("language")
