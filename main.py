@@ -5,6 +5,7 @@ import requests
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends, WebSocket
 from fastapi.responses import JSONResponse
 from starlette.concurrency import run_in_threadpool
+from starlette.middleware.cors import CORSMiddleware
 from starlette.websockets import WebSocketDisconnect
 
 from connection_manager import ConnectionManager
@@ -25,6 +26,14 @@ app = FastAPI(
     Refer to the endpoint-specific docs for more details.
     """,
     version="1.0.0"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods (GET, POST, etc.)
+    allow_headers=["*"],  # Allows all headers
 )
 
 manager = ConnectionManager()
