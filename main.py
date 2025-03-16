@@ -141,3 +141,25 @@ async def websocket_chat(websocket: WebSocket, room_id: str, model_id: str, user
         if room_id in manager.rooms:
             for conn in manager.rooms[room_id]:
                 await conn["websocket"].send_text(disconnect_message)
+
+
+@app.get("/v1/voices/tts")
+async def tts(text: str, language: str, model_id: str, current_user: dict = Depends(get_current_user)):
+    """
+    **Text-to-Speech (TTS) Endpoint**
+
+    Generate an audio file from the provided text in the specified language and model.
+    - **text**: The text to convert to speech.
+    - **language**: The language of the text.
+    - **model_id**: The ID of the model to use for generating the audio.
+
+    This endpoint requires authentication.
+    """
+
+    try:
+        audio_content = await run_in_threadpool(generate_tts, model_id, text, language)
+        audio_base64 = base64.b64encode(audio_content).decode("utf-8")
+        return JSONResponse(content={"audio": audio_base64})
+
+    except Exception as err:
+        raise HTTPException(status_code=500, detail=str(err))
