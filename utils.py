@@ -1,8 +1,13 @@
 import asyncio
 
 import requests
+from fastapi import HTTPException, Depends
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from jose import jwt, JWTError
 
-from constants import ELEVENLABS_API_KEY
+from constants import ELEVENLABS_API_KEY, SUPABASE_JWT_PUBLIC_KEY
+
+bearer_scheme = HTTPBearer()
 
 
 def generate_tts(voice_id: str, text: str) -> bytes:
@@ -36,3 +41,23 @@ def translate_text(text: str, target_language: str) -> str:
     except Exception:
         # If translation fails, fallback to the original text.
         return text
+
+
+def verify_token(token: str):
+    """
+    Verify the Supabase JWT token using HS256 algorithm.
+    """
+    try:
+        payload = jwt.decode(token, SUPABASE_JWT_PUBLIC_KEY, algorithms=["HS256"])
+        return payload
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+
+def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)):
+    """
+    Dependency that extracts and verifies the Bearer token.
+    The token is automatically pulled from the 'Authorization' header.
+    """
+    token = credentials.credentials
+    return verify_token(token)

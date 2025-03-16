@@ -1,48 +1,25 @@
 import base64
 import json
+
 import requests
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends, WebSocket
 from fastapi.responses import JSONResponse
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from starlette.concurrency import run_in_threadpool
 from starlette.websockets import WebSocketDisconnect
-from jose import jwt, JWTError
 
 from connection_manager import ConnectionManager
-from constants import ELEVENLABS_API_KEY, ELEVENLABS_VOICES_ADD_URL, SUPABASE_JWT_PUBLIC_KEY
-from utils import generate_tts, translate_text
+from constants import ELEVENLABS_API_KEY, ELEVENLABS_VOICES_ADD_URL
+from utils import generate_tts, translate_text, get_current_user, verify_token
 
 app = FastAPI()
 manager = ConnectionManager()
 
-bearer_scheme = HTTPBearer()
-
-
-def verify_token(token: str):
-    """
-    Verify the Supabase JWT token using HS256 algorithm.
-    """
-    try:
-        payload = jwt.decode(token, SUPABASE_JWT_PUBLIC_KEY, algorithms=["HS256"])
-        return payload
-    except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid token")
-
-
-def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)):
-    """
-    Dependency that extracts and verifies the Bearer token.
-    The token is automatically pulled from the 'Authorization' header.
-    """
-    token = credentials.credentials
-    return verify_token(token)
-
 
 @app.post("/v1/voices/add")
 async def add_voice(
-    name: str = Form(...),
-    file: UploadFile = File(...),
-    current_user: dict = Depends(get_current_user)  # Auth required via Bearer token
+        name: str = Form(...),
+        file: UploadFile = File(...),
+        current_user: dict = Depends(get_current_user)
 ):
     """
     Add a new voice by uploading a file and providing a name.
