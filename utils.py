@@ -4,6 +4,8 @@ import requests
 from fastapi import HTTPException, Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import jwt, JWTError
+import io
+import speech_recognition as sr
 
 from constants import ELEVENLABS_API_KEY, SUPABASE_JWT_PUBLIC_KEY
 
@@ -61,3 +63,33 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(bearer_
     """
     token = credentials.credentials
     return verify_token(token)
+
+
+def transcribe_audio(audio_data: bytes) -> str:
+    """
+    Transcribe binary audio data to text using the Google Web Speech API.
+
+    Parameters:
+        audio_data (bytes): The binary audio data.
+
+    Returns:
+        str: The transcribed text. If transcription fails or the speech is unclear,
+             an empty string is returned.
+    """
+    recognizer = sr.Recognizer()
+    audio_file = io.BytesIO(audio_data)
+
+    # Use AudioFile to process the binary data from a file-like object.
+    with sr.AudioFile(audio_file) as source:
+        audio = recognizer.record(source)
+
+    try:
+        # Attempt transcription using Google's speech recognition.
+        text = recognizer.recognize_google(audio)
+        return text
+    except sr.UnknownValueError:
+        # Speech was unintelligible.
+        return ""
+    except sr.RequestError as e:
+        # Could not request results from the service.
+        raise Exception(f"Error with the speech recognition service: {e}")
