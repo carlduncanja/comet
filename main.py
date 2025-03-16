@@ -42,35 +42,41 @@ async def add_voice(name: str = Form(...), file: UploadFile = File(...)):
 
 @app.websocket("/ws/chat/{room_id}/{model_id}/{user_id}/{username}")
 async def websocket_chat(websocket: WebSocket, room_id: str, model_id: str, user_id: str, username: str):
-    # For the first connection to a room, the creator should include ?language=<target_lang> in the URL.
-    language =  websocket.query_params.get("language")
+    # Each connection now supplies its own language via query parameter.
+    language = websocket.query_params.get("language")
+    # Try to connect; if the room already has 2 users, the connection will be closed immediately.
     await manager.connect(room_id, model_id, user_id, username, websocket, language)
+
+    # If the connection was closed due to room capacity, exit early.
+    if not manager.is_connected(room_id, websocket):
+        return
+
     try:
         while True:
             original_text = await websocket.receive_text()
+            # For each connection in the room, check the receiver's language.
+            # If it differs from the sender's, translate the text.
+            if room_id in manager.rooms:
+                for conn in manager.rooms[room_id]:
+                    receiver_language = conn["language"]
+                    # Use the sender's language (from connection) for comparison.
+                    if receiver_language and receiver_language != language:
+                        translated_text = await run_in_threadpool(translate_text, original_text, receiver_language)
+                    else:
+                        translated_text = original_text
 
-            # Retrieve the room's target language set by the first user.
-            target_language = manager.get_room_language(room_id)
-            if target_language:
-                # Translate the received text to the target language.
-                translated_text = await run_in_threadpool(translate_text, original_text, target_language)
-            else:
-                translated_text = original_text
+                    audio_content = await run_in_threadpool(generate_tts, model_id, translated_text)
+                    audio_base64 = base64.b64encode(audio_content).decode("utf-8")
 
-            # Generate TTS audio using the sender's model_id on the translated text.
-            audio_content = await run_in_threadpool(generate_tts, model_id, translated_text)
-            audio_base64 = base64.b64encode(audio_content).decode("utf-8")
-
-            message_data = {
-                "model_id": model_id,
-                "user_id": user_id,
-                "username": username,
-                "text": translated_text,
-                "audio": audio_base64
-            }
-            json_message = json.dumps(message_data)
-            await manager.broadcast(room_id, json_message)
-
+                    message_data = {
+                        "model_id": model_id,
+                        "user_id": user_id,
+                        "username": username,
+                        "text": translated_text,
+                        "audio": audio_base64
+                    }
+                    json_message = json.dumps(message_data)
+                    await conn["websocket"].send_text(json_message)
     except WebSocketDisconnect:
         manager.disconnect(room_id, websocket)
         disconnect_message = json.dumps({
@@ -80,4 +86,7 @@ async def websocket_chat(websocket: WebSocket, room_id: str, model_id: str, user
             "text": f"{username} has disconnected from room {room_id}.",
             "audio": ""
         })
-        await manager.broadcast(room_id, disconnect_message)
+        # Notify remaining participants.
+        if room_id in manager.rooms:
+            for conn in manager.rooms[room_id]:
+                await conn["websocket"].send_text(disconnect_message)
