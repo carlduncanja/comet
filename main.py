@@ -223,6 +223,7 @@ async def websocket_audio(websocket: WebSocket, room_id: str, model_id: str, use
 @app.post("/v1/audio/translate")
 async def audio_translate(
         audio: UploadFile = File(...),
+        model_id: str = Form(...),
         target_language: str = Form(...),
         current_user: dict = Depends(get_current_user)
 ):
@@ -247,11 +248,8 @@ async def audio_translate(
         # Translate the transcribed text to the target language.
         translated_text = await run_in_threadpool(translate_text, transcribed_text, target_language)
 
-        # Define a default model id for TTS (adjust as needed).
-        default_model_id = "default"
-
         # Generate TTS audio from the translated text.
-        tts_audio = await run_in_threadpool(generate_tts, default_model_id, translated_text, target_language)
+        tts_audio = await run_in_threadpool(generate_tts, model_id, translated_text, target_language)
 
         # Base64 encode the generated audio.
         audio_base64 = base64.b64encode(tts_audio).decode("utf-8")
