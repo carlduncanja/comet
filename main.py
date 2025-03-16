@@ -11,7 +11,22 @@ from connection_manager import ConnectionManager
 from constants import ELEVENLABS_API_KEY, ELEVENLABS_VOICES_ADD_URL
 from utils import generate_tts, translate_text, get_current_user, verify_token
 
-app = FastAPI()
+app = FastAPI(
+    title="Comet API",
+    description="""
+    # Comet API Documentation
+
+    The Comet API provides functionalities for adding voices and real-time chat via WebSocket.
+
+    ## Endpoints
+    - **POST /v1/voices/add:** Upload a file to add a new voice.
+    - **WebSocket /ws/chat/{room_id}/{model_id}/{user_id}/{username}:** Establish a chat connection.
+
+    Refer to the endpoint-specific docs for more details.
+    """,
+    version="1.0.0"
+)
+
 manager = ConnectionManager()
 
 
@@ -22,9 +37,15 @@ async def add_voice(
         current_user: dict = Depends(get_current_user)
 ):
     """
+    **Add Voice Endpoint**
+
     Add a new voice by uploading a file and providing a name.
-    Only authenticated users can access this endpoint.
+    - **name**: The display name for the new voice.
+    - **file**: The file containing the voice data.
+
+    This endpoint requires authentication.
     """
+
     try:
         file_content = await file.read()
         files = {"files": (file.filename, file_content, file.content_type)}
