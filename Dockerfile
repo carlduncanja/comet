@@ -1,18 +1,21 @@
-# Use an official lightweight Python image.
+# Use an official Python runtime as a parent image
 FROM python:3.9-slim
 
-# Set the working directory in the container.
+# Set the working directory in the container
 WORKDIR /app
 
-# Install dependencies.
+# Install dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the application code.
+# Copy the current directory contents into the container at /app
 COPY . .
 
-# Expose port 80 for the application.
+# Expose the port Heroku will use
 EXPOSE 80
 
-# Run the FastAPI application with uvicorn.
+# Define environment variable for production
+ENV PORT 80
+
+# Run the application using Uvicorn
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80"]
