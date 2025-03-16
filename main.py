@@ -1,5 +1,4 @@
 import base64
-import io
 import json
 
 import requests
@@ -8,7 +7,6 @@ from fastapi.responses import JSONResponse
 from starlette.concurrency import run_in_threadpool
 from starlette.middleware.cors import CORSMiddleware
 from starlette.websockets import WebSocketDisconnect
-from pydub import AudioSegment
 
 from connection_manager import ConnectionManager
 from constants import ELEVENLABS_API_KEY, ELEVENLABS_VOICES_ADD_URL
