@@ -249,7 +249,7 @@ async def audio_translate(
         translated_text = await run_in_threadpool(translate_text, transcribed_text, target_language)
 
         # Generate TTS audio from the translated text.
-        tts_audio = await run_in_threadpool(generate_tts, model_id, translated_text, target_language)
+        tts_audio = await run_in_threadpool(generate_tts, model_id, translated_text)
 
         # Base64 encode the generated audio.
         audio_base64 = base64.b64encode(tts_audio).decode("utf-8")
